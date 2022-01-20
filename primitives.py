@@ -40,8 +40,9 @@ def scheme_or(x, y):
     return '#f' if x == '#f' and y == '#f' else '#t'
 
 @primitive("equal?")
-def scheme_eqQ(x, y):
-    return x == y
+def scheme_eqQ(args):
+    assert len(args) == 2
+    return args[0] == args[1]
 
 @list_function("null?")
 @primitive("null?")
@@ -64,18 +65,17 @@ def scheme_length(args):
 @list_function("car")
 @primitive("car")
 def scheme_car(args):
-    assert len(args) == 1
-    return args[0][0]
+    return args[0]
 
 @list_function("cdr")
 @primitive("cdr")
 def scheme_cdr(args):
-    assert len(args) == 1
-    return args[0][1:]
+    return args[1:]
 
 @list_function("cons")
 @primitive("cons")
 def scheme_cons(args):
+    print(args)
     assert len(args) == 2
     return [args[0], args[1]]
 

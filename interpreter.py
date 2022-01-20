@@ -124,7 +124,13 @@ def execute(func, args):
         result = execute_lambda(func, args)
     else:
         if(func in primitives.LIST_FUNCTIONS):
-            args = getListFromCommand(args[0])[1]
+            if len(args) == 1:
+                args = getListFromCommand(args[0])[1]
+            else:
+                newArgs = []
+                for arg in args:
+                    newArgs.append(getListFromCommand(arg)[1])
+                args = newArgs
 
         result = None
 
