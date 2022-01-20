@@ -113,28 +113,34 @@ def listToSchemeList(lst):
 
 # Executes the given function with the given arguments
 def execute(func, args):
-    if func not in ['define', 'lambda']:
+    if (isinstance(func, lambdas.LambdaFunction)) or (func not in ['define', 'lambda']):
         for i in range(len(args)):
             if checkStartEnd(args[i]) == 0:
                 args[i] = processCommand(args[i])
-
-    if(func in primitives.LIST_FUNCTIONS):
-        args = getListFromCommand(args[0])[1]
-
+    
     result = None
 
-    # if func == 'map':
-    #     func = args[0]
-    #     args = args[1]
-    #     if func in DEFINED_FUNCTIONS:
-    #         result = FUNCTIONS['map'](lambda x : execute_lambda(DEFINED_FUNCTIONS[func], x), args)
-    #     else:
-    #         result = FUNCTIONS['map'](FUNCTIONS[func], getListFromCommand(args)[1])
-    # else:
-    if func in DEFINED_FUNCTIONS:
-        result = execute_lambda(DEFINED_FUNCTIONS[func], args)
+    if isinstance(func, lambdas.LambdaFunction):
+        result = execute_lambda(func, args)
     else:
-        result = FUNCTIONS[func](args)
+        if(func in primitives.LIST_FUNCTIONS):
+            args = getListFromCommand(args[0])[1]
+
+        result = None
+
+        # if func == 'map':
+        #     func = args[0]
+        #     args = args[1]
+        #     if func in DEFINED_FUNCTIONS:
+        #         result = FUNCTIONS['map'](lambda x : execute_lambda(DEFINED_FUNCTIONS[func], x), args)
+        #     else:
+        #         result = FUNCTIONS['map'](FUNCTIONS[func], getListFromCommand(args)[1])
+        # else:
+        if func in DEFINED_FUNCTIONS:
+            result = execute_lambda(DEFINED_FUNCTIONS[func], args)
+        else:
+            result = FUNCTIONS[func](args)
+    
     print(result)            ###################################################
     return str(result)
 
@@ -166,8 +172,18 @@ def processCommand(comm):
     print(comm)                             ####################################################
     cmnd = getListFromCommand(comm)
     if cmnd[0]:     # if the command is to be executed
-        # first argument _ the function. second argument _ the list of arguments for the function.
-        return execute(cmnd[1][0], cmnd[1][1:])
+        # this has to be a lambda function
+        if checkStartEnd(cmnd[1][0]) == 0:
+            # list representing lambda function
+            funcList = getListFromCommand(cmnd[1][0])[1]
+            # make sure it is lambda function indeed
+            assert funcList[0] == 'lambda'
+            lambdaFunction = construct_lambda(funcList[1], funcList[2])
+            # first argument _ the lambda function. second argument _ the list of arguments for the function.
+            return execute(lambdaFunction, cmnd[1][1:])
+        else:
+            # first argument _ the function. second argument _ the list of arguments for the function.
+            return execute(cmnd[1][0], cmnd[1][1:])
     else:
         return comm
 

@@ -45,40 +45,39 @@ def scheme_eqQ(x, y):
 
 @list_function("null?")
 @primitive("null?")
-def scheme_nullQ(x):
-    return isinstance(x, list) and len(x) == 0
+def scheme_nullQ(args):
+    assert len(args) == 1
+    return isinstance(args[0], list) and len(args[0]) == 0
 
 @list_function("list?")
 @primitive("list?")
-def scheme_listQ(x):
-    return isinstance(x, list)
+def scheme_listQ(args):
+    assert len(args) == 1
+    return isinstance(args[0], list)
 
 @list_function("length")
 @primitive("length")
-def scheme_length(x):
-    return len(x)
+def scheme_length(args):
+    assert len(args) == 1
+    return len(args[0])
 
 @list_function("car")
 @primitive("car")
-def scheme_car(x):
-    return x[0]
+def scheme_car(args):
+    assert len(args) == 1
+    return args[0][0]
 
 @list_function("cdr")
 @primitive("cdr")
-def scheme_cdr(x):
-    return x[1:]
+def scheme_cdr(args):
+    assert len(args) == 1
+    return args[0][1:]
 
 @list_function("cons")
 @primitive("cons")
-def scheme_cons(x, y):
-    return [x, y]
-
-@primitive("map")
-def scheme_map(fn, args):
-    res = []
-    for arg in args:
-        res.append(fn(arg))
-    return res
+def scheme_cons(args):
+    assert len(args) == 2
+    return [args[0], args[1]]
 
 @primitive("append")
 def scheme_append(args):
@@ -136,24 +135,29 @@ def scheme_div(args):
     return res
 
 @primitive("quotient")
-def scheme_quo(x, y):
-    return number(x) // number(y)
+def scheme_quo(args):
+    assert len(args) == 2
+    return number(args[0]) // number(args[1])
 
 @primitive("remainder")
-def scheme_rem(x, y):
-    return number(x) % number(y)
+def scheme_rem(args):
+    assert len(args) == 2
+    return number(args[0]) % number(args[1])
 
 @primitive("floor")
-def scheme_floor(x):
-    return number(x) // 1
+def scheme_floor(args):
+    assert len(args) == 1
+    return number(args[0]) // 1
 
 @primitive("ceil")
-def scheme_ceil(x):
-    x = number(x)
+def scheme_ceil(args):
+    assert len(args) == 1
+    x = number(args[0])
     return x if x % 1 == 0 else x // 1 + 1
 
 @primitive("=")
 def scheme_eq(args):
+    assert len(args) > 0
     lastarg = number(args[0])
     for arg in args:
         if number(arg) != lastarg:
@@ -161,29 +165,56 @@ def scheme_eq(args):
     return True
 
 @primitive("<")
-def scheme_lt(x, y):
-    return number(x) < number(y)
+def scheme_lt(args):
+    assert len(args) > 0
+    if len(args) == 1:
+        return True
+    for i in range(len(args) - 1):
+        if number(args[i]) >= number(args[i + 1]):
+            return False
+    return True
 
 @primitive(">")
-def scheme_gt(x, y):
-    return number(x) > number(y)
+def scheme_gt(args):
+    assert len(args) > 0
+    if len(args) == 1:
+        return True
+    for i in range(len(args) - 1):
+        if number(args[i]) <= number(args[i + 1]):
+            return False
+    return True
 
 @primitive("<=")
-def scheme_le(x, y):
-    return number(x) <= number(y)
+def scheme_le(args):
+    assert len(args) > 0
+    if len(args) == 1:
+        return True
+    for i in range(len(args) - 1):
+        if number(args[i]) > number(args[i + 1]):
+            return False
+    return True
 
 @primitive(">=")
-def scheme_ge(x, y):
-    return number(x) >= number(y)
+def scheme_ge(args):
+    assert len(args) > 0
+    if len(args) == 1:
+        return True
+    for i in range(len(args) - 1):
+        if number(args[i]) < number(args[i + 1]):
+            return False
+    return True
 
 @primitive("even?")
-def scheme_evenQ(x):
-    return number(x) % 2 == 0
+def scheme_evenQ(args):
+    assert len(args) == 1
+    return number(args[0]) % 2 == 0
 
 @primitive("odd?")
-def scheme_oddQ(x):
-    return number(x) % 2 == 1
+def scheme_oddQ(args):
+    assert len(args) == 1
+    return number(args[0]) % 2 == 1
 
 @primitive("zero?")
-def scheme_zeroQ(x):
-    return number(x) == 0
+def scheme_zeroQ(args):
+    assert len(args) == 1
+    return number(args[0]) == 0
