@@ -1,5 +1,3 @@
-from ast import Lambda
-from concurrent.futures import process
 import sys
 import primitives
 import lambdas
@@ -141,13 +139,14 @@ def execute(func, args):
     return str(result)
 
 # Constructs an instance of lambda function class based on given lambda expression and returns it
-def construct_lambda(expr):
-    parsed = getListFromCommand(expr)[1]
-    args = parsed[1]
-    body = parsed[2]
+def construct_lambda(args, body):
     toListFn = lambda comm : getListFromCommand(comm)[1]
     lambdaFunction = lambdas.LambdaFunction(args, body, toListFn)
     return lambdaFunction
+
+@primitives.primitive("lambda")
+def scheme_lambda(args):
+    return construct_lambda(args[0], args[1])
 
 # Takes as input an instance of lambda function class and a list of arguments
 # Plugs in the arguments and executes function
@@ -323,16 +322,21 @@ def scheme_load(arg):
     else:
         return
 
+# Defines a constant
 def define_constant(arg, val):
     DEFINED_CONSTANTS[str(arg)] = str(val)
 
+# Defines a function for later use
 def define_function(arg, val):
+    # first part of the function _ the name and the arguments passed
     face = getListFromCommand(arg)[1]
+    # the implementation of the function
     body = val
     name = face[0]
+    # passed arguments
     args = listToSchemeList(face[1:])
-    toListFn = lambda comm : getListFromCommand(comm)[1]
-    lambdaFunction = lambdas.LambdaFunction(args, body, toListFn)
+    lambdaFunction = construct_lambda(args, body)
+    # keep the function in the defined functions dictionary by its name
     DEFINED_FUNCTIONS[name] = lambdaFunction
 
 # Handles define command

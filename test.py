@@ -102,15 +102,15 @@ def test_replace():
 
 def test_lambda():
     lambdaFunction = None
-    lambdaFunction = interpreter.construct_lambda('(lambda (x y) (+ x y))')
+    lambdaFunction = interpreter.construct_lambda('(x y)', '(+ x y)')
     assert interpreter.execute_lambda(lambdaFunction, [1, 2]) == interpreter.execute_lambda(lambdaFunction, '(1 2)') == '3'
     print('TEST 1 PASSED')
-    lambdaFunction = interpreter.construct_lambda('(lambda (a b c) (* 8 (/ a b) (- 2 c)))')
+    lambdaFunction = interpreter.construct_lambda('(a b c)', '(* 8 (/ a b) (- 2 c))')
     assert interpreter.execute_lambda(lambdaFunction, [3, 2, 4]) == interpreter.execute_lambda(lambdaFunction, '(3 2 4)') == '-24.0'
     print('TEST 2 PASSED')
 
 def main():
-    test_toList()
+    test_lambda()
 
 if __name__ == '__main__':
     main()
