@@ -1,4 +1,6 @@
 import sys
+from tabnanny import check
+from conditionals import IfBlock
 import utils
 import primitives
 import lambdas
@@ -13,7 +15,7 @@ Line_Number = 1
 
 # Executes the given function with the given arguments
 def execute(func, args):
-    if (isinstance(func, lambdas.LambdaFunction)) or (func not in ['define', 'lambda']):
+    if (isinstance(func, lambdas.LambdaFunction)) or (func not in ['if', 'define', 'lambda']):
         for i in range(len(args)):
             if utils.checkStartEnd(args[i]) == utils.CSE_EXECUTABLE_LIST:
                 args[i] = processCommand(args[i])
@@ -28,11 +30,12 @@ def execute(func, args):
             # single list
             if len(args) == 1:
                 args = utils.getListFromCommand(args[0])[1]
+                args = [args]
             # list of lists
             else:
                 newArgs = []
                 for arg in args:
-                    newArgs.append(utils.getListFromCommand(arg)[1])
+                    newArgs.append(arg if utils.checkStartEnd(arg) == 3 else utils.getListFromCommand(arg)[1])
                 args = newArgs
 
         result = None
@@ -50,6 +53,12 @@ def execute(func, args):
         else:
             result = FUNCTIONS[func](args)
     
+    if func in ["cdr", "cons", "append"]:
+        result = '\'' + utils.listToSchemeList(result)
+
+    if result is not None and isinstance(result, str) and utils.checkStartEnd(result) in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]:
+        result = utils.fixWhitespace(result)
+
     print(result)            ###################################################
     return str(result)
 
@@ -59,19 +68,39 @@ def construct_lambda(args, body):
     lambdaFunction = lambdas.LambdaFunction(args, body, toListFn)
     return lambdaFunction
 
-@primitives.primitive("lambda")
-def scheme_lambda(args):
-    return construct_lambda(args[0], args[1])
-
 # Takes as input an instance of lambda function class and a list of arguments
 # Plugs in the arguments and executes function
 def execute_lambda(lambdaFunction, args):
     return processCommand(lambdaFunction.plug(args))
 
+@primitives.primitive("lambda")
+def scheme_lambda(args):
+    return construct_lambda(args[0], args[1])
+
+# Constructs an instance of if block class based on given arguments and returns it
+def construct_if(all):
+    condition = all[0]
+    trueBlock = all[1]
+    falseBlock = all[2]
+    execFn = lambda x : x if (utils.checkStartEnd(x) == 3) else processCommand(x)
+    ifBlock = IfBlock(condition, trueBlock, falseBlock, execFn)
+    return ifBlock
+
+# Takes as input an instance of if block class
+# Returns the result of executing the correct block from it
+def execute_if(ifBlock):
+    return ifBlock.execFn((ifBlock.getChosen()))
+
+@primitives.primitive("if")
+def scheme_if(args):
+    assert len(args) == 3
+    ifBlock = construct_if(args)
+    return execute_if(ifBlock)
+
 # Plug in the constants defined by the user into the command/list
 def plug_constants(comm):
     for constant in DEFINED_CONSTANTS:
-        comm = lambdas.replaceInList(constant, DEFINED_CONSTANTS[constant], comm)
+        comm = utils.replaceInList(constant, DEFINED_CONSTANTS[constant], comm)
     return comm
 
 # Given a scheme list as a single line, get it as a python list and either execute it and return result 
@@ -288,7 +317,9 @@ def processStdin():
         if comm == '(exit)':
             break
 
-        processCommand(comm)
+        result = processCommand(comm)
+        
+        # utils.output(result)    #    UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT
 
 # Main function takes command-line arguments. 
 # If the user wants to run a program from a file, then there should be one command-line argument: The name of the file.

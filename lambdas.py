@@ -1,16 +1,4 @@
-def replaceInList(arg, argVal, lst):
-    pos = 0
-    while True:
-        pos = lst.find(arg, pos)
-        if pos == -1:
-            break
-
-        if lst[pos - 1] in ['(', ' '] and lst[pos + len(arg)] in [')', ' ']:
-            lst = lst[0:pos] + str(argVal) + lst[pos + len(str(arg)):]
-        
-        pos += len(arg)
-
-    return lst
+from utils import replaceInList
 
 class LambdaFunction:
     def plug(self, argVals):

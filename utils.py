@@ -1,3 +1,5 @@
+"""This file implements utilities used for working with scheme lists and using them with python lists."""
+
 CSE_EXECUTABLE_LIST = 0
 CSE_NONEXECUTABLE_LIST = 1
 CSE_STRING = 2
@@ -60,7 +62,7 @@ def getEncasedIn(strn, pos, leftC, rightC):
 # second element is the list of the list's elements
 def getListFromCommand(comm):
     res = []
-    comm = comm[:len(comm) - 1]         # remove bracket at the end
+    comm = comm[:len(comm) - 1]         # remove ) at the end
     if comm[0] == '\'':                 # remove '( at the start
         comm = comm[2:]
         res.append(False)
@@ -100,3 +102,25 @@ def listToSchemeList(lst):
         res += ' ' + (listToSchemeList(elem) if isinstance(elem, list) else str(elem))
     res += ')'
     return res
+
+# Replaces every occurence of arg in lst with argVal
+def replaceInList(arg, argVal, lst):
+    pos = 0
+    while True:
+        pos = lst.find(arg, pos)
+        if pos == -1:
+            break
+
+        if lst[pos - 1] in ['(', ' '] and lst[pos + len(arg)] in [')', ' ']:
+            lst = lst[0:pos] + str(argVal) + lst[pos + len(str(arg)):]
+        
+        pos += len(arg)
+
+    return lst
+
+# Used to output the result of a command
+def output(result):
+    result = str(result)
+    result = result.replace('\'(', '(')
+    result = fixWhitespace(result)
+    print(result)
