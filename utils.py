@@ -1,0 +1,102 @@
+CSE_EXECUTABLE_LIST = 0
+CSE_NONEXECUTABLE_LIST = 1
+CSE_STRING = 2
+
+# Gets rid of extra whitespace.
+# Returns the given command as being on one line, 
+# only whitespace being single spaces between lists and elements of lists.
+def fixWhitespace(comm):
+    comm = comm.replace('\n', ' ')
+    comm = ' '.join(comm.split())
+    comm = comm.replace('( ', '(')
+    comm = comm.replace(' )', ')')
+    comm = comm.replace('\' ', '\'')
+    return comm
+
+# Checks the start and end of string.
+# Check for (...); '(...); '...'/"...".
+def checkStartEnd(strn):
+    if strn[len(strn) - 1] == ')' and strn[0] == '(':
+        return CSE_EXECUTABLE_LIST
+    if strn[len(strn) - 1] == ')' and strn[0:2] == '\'(':
+        return CSE_NONEXECUTABLE_LIST
+    if [strn[0], strn[len(strn) - 1]] in [['\'', '\''], ['\"', '\"']]:
+        return CSE_STRING
+    return 3
+
+# Returns the first occurence after pos of a substring in strn being encased between leftC and rightC.
+# leftC and rightC are included in the result
+# leftC and rightC should be different
+def getEncasedIn(strn, pos, leftC, rightC):
+    if leftC == rightC:
+        return ""
+        
+    stepL = len(leftC)
+    stepR = len(rightC)
+
+    # Get to the closest occurence of leftC
+    startPos = strn.find(leftC, pos)
+    pos = startPos
+
+    leftCount = 0
+    
+    while pos < len(strn):
+        if strn[pos:(pos + stepL)] == leftC:        # skip step characters if encountered leftC or rightC
+            leftCount += 1
+            pos += stepL
+        elif strn[pos:(pos + stepR)] == rightC:
+            leftCount -= 1
+            pos += stepR
+        else:                                       # skip only one character if encountered neither
+            pos += 1
+        
+        if leftCount == 0:                          # return the desired substring if we found it
+            return strn[startPos:pos]
+
+    return ''                                       # return empty string if we got to the end of strn
+        
+# Returns the given command as a list. Assumes that the command is properly structured.
+# First element of the returned list is whether the list should be evaluated, 
+# second element is the list of the list's elements
+def getListFromCommand(comm):
+    res = []
+    comm = comm[:len(comm) - 1]         # remove bracket at the end
+    if comm[0] == '\'':                 # remove '( at the start
+        comm = comm[2:]
+        res.append(False)
+    else:                               # remove ( at the start
+        res.append(True)
+        comm = comm[1:]
+    
+    elems = []
+    pos = 0
+
+    while pos < len(comm):
+        if comm[pos] == '(':          # executable list
+            newElem = getEncasedIn(comm, pos, '(', ')')
+        elif (pos < len(comm) - 1) and comm[pos:pos + 2] == '\'(':           # non-executable list
+            newElem = getEncasedIn(comm, pos, '\'(', ')')
+        else:                           # just an element
+            beforeNext = comm.find(' ', pos)
+            if beforeNext == -1:
+                beforeNext = len(comm)
+            newElem = comm[pos:beforeNext]
+
+        # append the new element and move the position forward
+        elems.append(newElem)
+        pos += len(newElem)
+        pos += 1
+
+    res.append(elems)
+    # print(res)                         ###############################################
+    return res
+
+# Returns a string representation of the given python list
+def listToSchemeList(lst):
+    res = '('
+    if len(lst) > 0:
+        res += listToSchemeList(lst[0]) if isinstance(lst[0], list) else str(lst[0])
+    for elem in lst[1:]:
+        res += ' ' + (listToSchemeList(elem) if isinstance(elem, list) else str(elem))
+    res += ')'
+    return res

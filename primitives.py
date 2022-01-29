@@ -18,7 +18,9 @@ def primitive(name):
     return add
 
 @primitive("boolean?")
-def scheme_booleanQ(x):
+def scheme_booleanQ(args):
+    assert len(args) == 1
+    x = args[0]
     return scheme_true(x) or scheme_false(x)
 
 def scheme_true(x):
@@ -28,16 +30,40 @@ def scheme_false(x):
     return x == '#f'
 
 @primitive("not")
-def scheme_not(x):
+def scheme_not(args):
+    assert len(args) == 1
+    x = args[0]
     return '#t' if scheme_false(x) else '#f'
 
 @primitive("and")
-def scheme_and(x, y):
-    return '#t' if x != '#f' and y != '#f' else '#f'
+def scheme_and(args):
+    # return false if false is to be found in the arguments
+    # return the last non-boolean if one exists. return true otherwise
+    # "and" works like this in scheme for some reason
+    for arg in args:
+        if scheme_false(arg):
+            return '#f'
+        
+    for arg in reversed(args):
+        if not scheme_booleanQ([arg]):
+            return arg
+    
+    return '#t'
 
 @primitive("or")
-def scheme_or(x, y):
-    return '#f' if x == '#f' and y == '#f' else '#t'
+def scheme_or(args):
+    # return true if true is to be found in the arguments
+    # return the first non-boolean if one exists. return false otherwise
+    # "or" works like this in scheme for some reason
+    for arg in args:
+        if scheme_true(arg):
+            return '#t'
+    
+    for arg in args:
+        if not scheme_false(arg):
+            return arg
+
+    return '#f'
 
 @primitive("equal?")
 def scheme_eqQ(args):
@@ -79,6 +105,7 @@ def scheme_cons(args):
     assert len(args) == 2
     return [args[0], args[1]]
 
+@list_function("append")
 @primitive("append")
 def scheme_append(args):
     res = []

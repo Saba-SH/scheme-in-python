@@ -1,4 +1,5 @@
 import sys
+import utils
 import primitives
 import lambdas
 
@@ -9,113 +10,12 @@ DEFINED_CONSTANTS = {}
 DEFINED_FUNCTIONS = {}
 Line_Number = 1
 
-# Gets rid of extra whitespace.
-# Returns the given command as being on one line, 
-# only whitespace being single spaces between lists and elements of lists.
-def fixWhitespace(comm):
-    comm = comm.replace('\n', ' ')
-    comm = ' '.join(comm.split())
-    comm = comm.replace('( ', '(')
-    comm = comm.replace(' )', ')')
-    comm = comm.replace('\' ', '\'')
-    return comm
-
-# Checks the start and end of string.
-# If it's like (...), return 0
-# If it's like '(...), return 1
-# If it's like '...' or "...", return 2
-# Return 3 otherwise
-def checkStartEnd(strn):
-    if strn[len(strn) - 1] == ')' and strn[0] == '(':
-        return 0
-    if strn[len(strn) - 1] == ')' and strn[0:2] == '\'(':
-        return 1
-    if [strn[0], strn[len(strn) - 1]] in [['\'', '\''], ['\"', '\"']]:
-        return 2
-    return 3
-
-# Returns the first occurence after pos of a substring in strn being encased between leftC and rightC.
-# leftC and rightC are included in the result
-# leftC and rightC should be different
-def getEncasedIn(strn, pos, leftC, rightC):
-    if leftC == rightC:
-        return ""
-        
-    stepL = len(leftC)
-    stepR = len(rightC)
-
-    # Get to the closest occurence of leftC
-    startPos = strn.find(leftC, pos)
-    pos = startPos
-
-    leftCount = 0
-    
-    while pos < len(strn):
-        if strn[pos:(pos + stepL)] == leftC:        # skip step characters if encountered leftC or rightC
-            leftCount += 1
-            pos += stepL
-        elif strn[pos:(pos + stepR)] == rightC:
-            leftCount -= 1
-            pos += stepR
-        else:                                       # skip only one character if encountered neither
-            pos += 1
-        
-        if leftCount == 0:                          # return the desired substring if we found it
-            return strn[startPos:pos]
-
-    return ''                                       # return empty string if we got to the end of strn
-        
-# Returns the given command as a list. Assumes that the command is properly structured.
-# First element of the returned list is whether the list should be evaluated, 
-# second element is the list of the list's elements
-def getListFromCommand(comm):
-    res = []
-    comm = comm[:len(comm) - 1]         # remove bracket at the end
-    if comm[0] == '\'':                 # remove '( at the start
-        comm = comm[2:]
-        res.append(False)
-    else:                               # remove ( at the start
-        res.append(True)
-        comm = comm[1:]
-    
-    elems = []
-    pos = 0
-
-    while pos < len(comm):
-        if comm[pos] == '(':          # executable list
-            newElem = getEncasedIn(comm, pos, '(', ')')
-        elif (pos < len(comm) - 1) and comm[pos:pos + 2] == '\'(':           # non-executable list
-            newElem = getEncasedIn(comm, pos, '\'(', ')')
-        else:                           # just an element
-            beforeNext = comm.find(' ', pos)
-            if beforeNext == -1:
-                beforeNext = len(comm)
-            newElem = comm[pos:beforeNext]
-
-        # append the new element and move the position forward
-        elems.append(newElem)
-        pos += len(newElem)
-        pos += 1
-
-    res.append(elems)
-    # print(res)                         ###############################################
-    return res
-
-# Returns a string representation of the given python list
-def listToSchemeList(lst):
-    res = '('
-    if len(lst) > 0:
-        res += listToSchemeList(lst[0]) if isinstance(lst[0], list) else str(lst[0])
-    for elem in lst[1:]:
-        res += ' ' + (listToSchemeList(elem) if isinstance(elem, list) else str(elem))
-    res += ')'
-    return res
 
 # Executes the given function with the given arguments
 def execute(func, args):
     if (isinstance(func, lambdas.LambdaFunction)) or (func not in ['define', 'lambda']):
         for i in range(len(args)):
-            if checkStartEnd(args[i]) == 0:
+            if utils.checkStartEnd(args[i]) == utils.CSE_EXECUTABLE_LIST:
                 args[i] = processCommand(args[i])
     
     result = None
@@ -123,13 +23,16 @@ def execute(func, args):
     if isinstance(func, lambdas.LambdaFunction):
         result = execute_lambda(func, args)
     else:
+        # give different input to list functions
         if(func in primitives.LIST_FUNCTIONS):
+            # single list
             if len(args) == 1:
-                args = getListFromCommand(args[0])[1]
+                args = utils.getListFromCommand(args[0])[1]
+            # list of lists
             else:
                 newArgs = []
                 for arg in args:
-                    newArgs.append(getListFromCommand(arg)[1])
+                    newArgs.append(utils.getListFromCommand(arg)[1])
                 args = newArgs
 
         result = None
@@ -140,7 +43,7 @@ def execute(func, args):
         #     if func in DEFINED_FUNCTIONS:
         #         result = FUNCTIONS['map'](lambda x : execute_lambda(DEFINED_FUNCTIONS[func], x), args)
         #     else:
-        #         result = FUNCTIONS['map'](FUNCTIONS[func], getListFromCommand(args)[1])
+        #         result = FUNCTIONS['map'](FUNCTIONS[func], utils.getListFromCommand(args)[1])
         # else:
         if func in DEFINED_FUNCTIONS:
             result = execute_lambda(DEFINED_FUNCTIONS[func], args)
@@ -152,7 +55,7 @@ def execute(func, args):
 
 # Constructs an instance of lambda function class based on given lambda expression and returns it
 def construct_lambda(args, body):
-    toListFn = lambda comm : getListFromCommand(comm)[1]
+    toListFn = lambda comm : utils.getListFromCommand(comm)[1]
     lambdaFunction = lambdas.LambdaFunction(args, body, toListFn)
     return lambdaFunction
 
@@ -176,12 +79,12 @@ def plug_constants(comm):
 def processCommand(comm):
     comm = plug_constants(comm)
     print(comm)                             ####################################################
-    cmnd = getListFromCommand(comm)
+    cmnd = utils.getListFromCommand(comm)
     if cmnd[0]:     # if the command is to be executed
         # this has to be a lambda function
-        if checkStartEnd(cmnd[1][0]) == 0:
+        if utils.checkStartEnd(cmnd[1][0]) == utils.CSE_EXECUTABLE_LIST:
             # list representing lambda function
-            funcList = getListFromCommand(cmnd[1][0])[1]
+            funcList = utils.getListFromCommand(cmnd[1][0])[1]
             # make sure it is lambda function indeed
             assert funcList[0] == 'lambda'
             lambdaFunction = construct_lambda(funcList[1], funcList[2])
@@ -201,7 +104,7 @@ def scheme_eval(args):
 @primitives.primitive("apply")
 def scheme_apply(args):
     # list of arguments
-    actArgs = getListFromCommand(args[1])
+    actArgs = utils.getListFromCommand(args[1])
     # make sure that the list is not executable as given
     assert not actArgs[0]
     # list of arguments
@@ -211,7 +114,7 @@ def scheme_apply(args):
     # command to be processed, as python list
     actArgs.insert(0, func)
     # command to be processed, as scheme list
-    comm = listToSchemeList(actArgs)
+    comm = utils.listToSchemeList(actArgs)
     return processCommand(comm)
 
 @primitives.primitive("map")
@@ -222,7 +125,7 @@ def scheme_map(args):
     # list of lists to use the function on
     argLists = []
     for arg in actArgs:
-        argList = getListFromCommand(arg)
+        argList = utils.getListFromCommand(arg)
         # be sure that we're mapping function on a ready list
         assert not argList[0]
         argLists.append(argList[1])
@@ -236,7 +139,7 @@ def scheme_map(args):
         for j in range(len(argLists)):
             cmnd.append(argLists[j][i])
         # turn the command into a scheme-style command as a string
-        comm = listToSchemeList(cmnd)
+        comm = utils.listToSchemeList(cmnd)
         # compute element of the result list and append it to the result list
         res.append(processCommand(comm))
     
@@ -266,7 +169,7 @@ def getCommandFromStdin():
         if openBr == 0:
             break
         
-    return fixWhitespace(comm)
+    return utils.fixWhitespace(comm)
 
 # Reads the next command from a file and returns it as one line with whitespace fixed
 def getCommandFromFile(file):
@@ -295,7 +198,7 @@ def getCommandFromFile(file):
     if comm == '':
         return None
     
-    return fixWhitespace(comm)
+    return utils.fixWhitespace(comm)
 
 # Process all commands from the given file.
 # Return 1 if there was a call to exit within the file, return 0 otherwise.
@@ -315,7 +218,7 @@ def processFile(filename):
         # print(comm)             ##############################################################
 
         # make sure that the input command was a list
-        assert checkStartEnd(comm) <= 1
+        assert utils.checkStartEnd(comm) in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]
 
         # stop reading if we got an exit command
         if comm == '(exit)':
@@ -337,7 +240,7 @@ def processFile(filename):
 @primitives.primitive("load")
 def scheme_load(arg):
     filename = arg[0]
-    assert checkStartEnd(filename) == 2
+    assert utils.checkStartEnd(filename) == utils.CSE_STRING
     # Return from the program if there is an exit command in the file
     if processFile(filename[1:len(filename)-1]) == 1:
         sys.exit()
@@ -351,12 +254,12 @@ def define_constant(arg, val):
 # Defines a function for later use
 def define_function(arg, val):
     # first part of the function _ the name and the arguments passed
-    face = getListFromCommand(arg)[1]
+    face = utils.getListFromCommand(arg)[1]
     # the implementation of the function
     body = val
     name = face[0]
     # passed arguments
-    args = listToSchemeList(face[1:])
+    args = utils.listToSchemeList(face[1:])
     lambdaFunction = construct_lambda(args, body)
     # keep the function in the defined functions dictionary by its name
     DEFINED_FUNCTIONS[name] = lambdaFunction
@@ -366,7 +269,7 @@ def define_function(arg, val):
 def scheme_define(args):
     arg = args[0]
     val = args[1]
-    if checkStartEnd(arg) == 0:
+    if utils.checkStartEnd(arg) == utils.CSE_EXECUTABLE_LIST:
         define_function(arg, val)
     else:
         define_constant(arg, val)
@@ -379,7 +282,7 @@ def processStdin():
         # print(comm)             ##############################################################
         
         # make sure that the input command was a list
-        assert checkStartEnd(comm) <= 1
+        assert utils.checkStartEnd(comm) in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]
 
         # quit reading commands on (exit) command
         if comm == '(exit)':
