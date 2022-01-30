@@ -1,5 +1,6 @@
 import lambdas
 import interpreter
+import utils
 
 def test_argv():
     print('##########################')
@@ -109,8 +110,12 @@ def test_lambda():
     assert interpreter.execute_lambda(lambdaFunction, [3, 2, 4]) == interpreter.execute_lambda(lambdaFunction, '(3 2 4)') == '-24.0'
     print('TEST 2 PASSED')
 
+def test_comments():
+    assert utils.removeComments(';AAAAAAAAAA') == ''
+    print('TEST 1 PASSED')
+
 def main():
-    test_lambda()
+    test_comments()
 
 if __name__ == '__main__':
     main()

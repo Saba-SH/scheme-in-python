@@ -1,6 +1,6 @@
 import sys
 from tabnanny import check
-from conditionals import IfBlock
+from conditionals import CondBlock, IfBlock
 import utils
 import primitives
 import lambdas
@@ -15,7 +15,7 @@ Line_Number = 1
 
 # Executes the given function with the given arguments
 def execute(func, args):
-    if (isinstance(func, lambdas.LambdaFunction)) or (func not in ['if', 'define', 'lambda']):
+    if (isinstance(func, lambdas.LambdaFunction)) or (func not in ['if', 'cond', 'define', 'lambda']):
         for i in range(len(args)):
             if utils.checkStartEnd(args[i]) == utils.CSE_EXECUTABLE_LIST:
                 args[i] = processCommand(args[i])
@@ -59,8 +59,10 @@ def execute(func, args):
     if result is not None and isinstance(result, str) and utils.checkStartEnd(result) in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]:
         result = utils.fixWhitespace(result)
 
-    print(result)            ###################################################
-    return str(result)
+    # print(result)            ###################################################
+    # if not isinstance(result, lambdas.LambdaFunction):
+    #     result = str(result)
+    return result
 
 # Constructs an instance of lambda function class based on given lambda expression and returns it
 def construct_lambda(args, body):
@@ -89,13 +91,39 @@ def construct_if(all):
 # Takes as input an instance of if block class
 # Returns the result of executing the correct block from it
 def execute_if(ifBlock):
-    return ifBlock.execFn((ifBlock.getChosen()))
+    return ifBlock.execFn(ifBlock.getChosen())
 
 @primitives.primitive("if")
 def scheme_if(args):
     assert len(args) == 3
     ifBlock = construct_if(args)
     return execute_if(ifBlock)
+
+# Takes as input all the arguments for the cond
+# Constructs an instance of cond block class based on them and returns it 
+def construct_cond(all):
+    conditions = []
+    blocks = []
+
+    for i in range(len(all) - 1):
+        pair = utils.getListFromCommand(all[i])[1]
+        conditions.append(pair[0])
+        blocks.append(pair[1])
+    blocks.append(utils.getListFromCommand(all[len(all) - 1])[1][1])
+
+    execFn = lambda x : x if (utils.checkStartEnd(x) == 3) else processCommand(x)
+    condBlock = CondBlock(conditions, blocks, execFn)
+    return condBlock
+
+# Takes as input an instance of a cond class
+# Executes the correct block from it and returns the result
+def execute_cond(condBlock):
+    return condBlock.execFn(condBlock.getChosen())
+
+@primitives.primitive("cond")
+def scheme_cond(args):
+    condBlock = construct_cond(args)
+    return execute_cond(condBlock)
 
 # Plug in the constants defined by the user into the command/list
 def plug_constants(comm):
@@ -107,7 +135,7 @@ def plug_constants(comm):
 # or return the unchanged scheme list itself
 def processCommand(comm):
     comm = plug_constants(comm)
-    print(comm)                             ####################################################
+    # print(comm)                             ####################################################
     cmnd = utils.getListFromCommand(comm)
     if cmnd[0]:     # if the command is to be executed
         # this has to be a lambda function
@@ -167,10 +195,11 @@ def scheme_map(args):
         cmnd.append(func)
         for j in range(len(argLists)):
             cmnd.append(argLists[j][i])
-        # turn the command into a scheme-style command as a string
-        comm = utils.listToSchemeList(cmnd)
-        # compute element of the result list and append it to the result list
-        res.append(processCommand(comm))
+        # # turn the command into a scheme-style command as a string
+        # comm = utils.listToSchemeList(cmnd)
+        # # compute element of the result list and append it to the result list
+        # res.append(processCommand(comm))
+        res.append(execute(cmnd[0], cmnd[1:]))
     
     return res
 
@@ -198,7 +227,7 @@ def getCommandFromStdin():
         if openBr == 0:
             break
         
-    return utils.fixWhitespace(comm)
+    return utils.fixWhitespace(utils.removeComments(comm))
 
 # Reads the next command from a file and returns it as one line with whitespace fixed
 def getCommandFromFile(file):
@@ -227,7 +256,7 @@ def getCommandFromFile(file):
     if comm == '':
         return None
     
-    return utils.fixWhitespace(comm)
+    return utils.fixWhitespace(utils.removeComments(comm))
 
 # Process all commands from the given file.
 # Return 1 if there was a call to exit within the file, return 0 otherwise.
@@ -276,6 +305,16 @@ def scheme_load(arg):
     else:
         return
 
+# Used to print to console with a command
+@primitives.primitive("display")
+def scheme_display(args):
+    utils.output(args[0])
+
+# Puts a new line to the console
+@primitives.primitive("newline")
+def scheme_newline(args):
+    print("")
+
 # Defines a constant
 def define_constant(arg, val):
     DEFINED_CONSTANTS[str(arg)] = str(val)
@@ -319,7 +358,7 @@ def processStdin():
 
         result = processCommand(comm)
         
-        # utils.output(result)    #    UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT
+        utils.output(result)    #    UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT
 
 # Main function takes command-line arguments. 
 # If the user wants to run a program from a file, then there should be one command-line argument: The name of the file.

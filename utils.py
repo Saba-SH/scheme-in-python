@@ -1,8 +1,27 @@
-"""This file implements utilities used for working with scheme lists and using them with python lists."""
+"""This file implements utilities used for working with scheme I/O,
+ scheme lists and using them together with python lists."""
 
 CSE_EXECUTABLE_LIST = 0
 CSE_NONEXECUTABLE_LIST = 1
 CSE_STRING = 2
+
+# Removes all the comments from the given command.
+def removeComments(comm):
+    pos = 0
+    
+    while True:
+        if pos >= len(comm):
+            break
+        comPos = comm.find(';', pos)
+        if comPos == -1:
+            break
+        uncomPos = comm.find('\n', comPos)
+        if uncomPos == -1:
+            uncomPos = len(comm)
+        comm = comm[0:comPos] + comm[uncomPos + 1:]
+        pos = comPos
+
+    return comm
 
 # Gets rid of extra whitespace.
 # Returns the given command as being on one line, 
@@ -120,6 +139,10 @@ def replaceInList(arg, argVal, lst):
 
 # Used to output the result of a command
 def output(result):
+    if result is None:
+        return
+    if isinstance(result, list):
+        result = listToSchemeList(result)
     result = str(result)
     result = result.replace('\'(', '(')
     result = fixWhitespace(result)

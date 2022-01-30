@@ -74,13 +74,13 @@ def scheme_eqQ(args):
 @primitive("null?")
 def scheme_nullQ(args):
     assert len(args) == 1
-    return '#t' if isinstance(args[0][0], list) and len(args[0][0]) == 0 else '#f'
+    return '#t' if isinstance(args[0], list) and len(args[0]) == 0 else '#f'
 
 @list_function("list?")
 @primitive("list?")
 def scheme_listQ(args):
     assert len(args) == 1
-    return '#t' if isinstance(args[0][0], list) else '#f'
+    return '#t' if isinstance(args[0], list) else '#f'
 
 @list_function("length")
 @primitive("length")
@@ -105,9 +105,9 @@ def scheme_cons(args):
     res = [args[0]]
     if isinstance(args[1], list):
         for elem in args[1]:
-            res += elem
+            res.append(elem)
     else:
-        res += args[1]
+        res.append(args[1])
     
     return res
 
