@@ -4,6 +4,7 @@
 CSE_EXECUTABLE_LIST = 0
 CSE_NONEXECUTABLE_LIST = 1
 CSE_STRING = 2
+CSE_OTHER = 3
 
 # Removes all the comments from the given command.
 def removeComments(comm):
@@ -43,7 +44,7 @@ def checkStartEnd(strn):
         return CSE_NONEXECUTABLE_LIST
     if [strn[0], strn[len(strn) - 1]] in [['\'', '\''], ['\"', '\"']]:
         return CSE_STRING
-    return 3
+    return CSE_OTHER
 
 # Returns the first occurence after pos of a substring in strn being encased between leftC and rightC.
 # leftC and rightC are included in the result
@@ -109,6 +110,9 @@ def getListFromCommand(comm):
         pos += 1
 
     res.append(elems)
+    # '() and () are one and the same
+    if elems == []:
+        res[0] = False
     # print(res)                         ###############################################
     return res
 
@@ -121,6 +125,17 @@ def listToSchemeList(lst):
         res += ' ' + (listToSchemeList(elem) if isinstance(elem, list) else str(elem))
     res += ')'
     return res
+
+# Returns a string representation of the given python list, except that all lists are starting with '
+def listTononexList(lst):
+    res = '\'('
+    if len(lst) > 0:
+        res += listTononexList(lst[0]) if isinstance(lst[0], list) else str(lst[0])
+    for elem in lst[1:]:
+        res += ' ' + (listTononexList(elem) if isinstance(elem, list) else str(elem))
+    res += ')'
+    return res
+
 
 # Replaces every occurence of arg in lst with argVal
 def replaceInList(arg, argVal, lst):
@@ -146,4 +161,4 @@ def output(result):
     result = str(result)
     result = result.replace('\'(', '(')
     result = fixWhitespace(result)
-    print(result)
+    print(result, end='')

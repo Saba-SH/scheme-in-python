@@ -1,3 +1,5 @@
+from sys import exit
+
 # All of the functions here will be defined as soon as you start the program
 FUNCTIONS = {}
 LIST_FUNCTIONS = set()
@@ -17,9 +19,14 @@ def primitive(name):
         return fn
     return add
 
+def exit_peacefully(funcName, expected, got):
+    if expected != got:
+        print("Invalid argument count for function \"" + funcName + "\". Expected " + str(expected) + ", got "+ str(got) + ". Quitting.")
+        exit()
+
 @primitive("boolean?")
 def scheme_booleanQ(args):
-    assert len(args) == 1
+    exit_peacefully("boolean?", 1, len(args))
     x = args[0]
     return '#t' if (scheme_true(x) or scheme_false(x)) else '#f'
 
@@ -31,7 +38,7 @@ def scheme_false(x):
 
 @primitive("not")
 def scheme_not(args):
-    assert len(args) == 1
+    exit_peacefully("not", 1, len(args))
     x = args[0]
     return '#t' if scheme_false(x) else '#f'
 
@@ -67,25 +74,25 @@ def scheme_or(args):
 
 @primitive("equal?")
 def scheme_eqQ(args):
-    assert len(args) == 2
-    return '#t' if args[0] == args[1] else '#f'
+    exit_peacefully("equal?", 2, len(args))
+    return '#t' if str(args[0]) == str(args[1]) else '#f'
 
 @list_function("null?")
 @primitive("null?")
 def scheme_nullQ(args):
-    assert len(args) == 1
+    exit_peacefully("null?", 1, len(args))
     return '#t' if isinstance(args[0], list) and len(args[0]) == 0 else '#f'
 
 @list_function("list?")
 @primitive("list?")
 def scheme_listQ(args):
-    assert len(args) == 1
+    exit_peacefully("list?", 1, len(args))
     return '#t' if isinstance(args[0], list) else '#f'
 
 @list_function("length")
 @primitive("length")
 def scheme_length(args):
-    assert len(args) == 1
+    exit_peacefully("length", 1, len(args))
     return len(args[0])
 
 @list_function("car")
@@ -101,7 +108,7 @@ def scheme_cdr(args):
 @list_function("cons")
 @primitive("cons")
 def scheme_cons(args):
-    assert len(args) == 2
+    exit_peacefully("cons", 2, len(args))
     res = [args[0]]
     if isinstance(args[1], list):
         for elem in args[1]:
@@ -169,28 +176,38 @@ def scheme_div(args):
 
 @primitive("quotient")
 def scheme_quo(args):
-    assert len(args) == 2
+    exit_peacefully("quotient", 2, len(args))
     return number(args[0]) // number(args[1])
 
+@primitive("mod")
 @primitive("remainder")
 def scheme_rem(args):
-    assert len(args) == 2
+    exit_peacefully("remainder", 2, len(args))
     return number(args[0]) % number(args[1])
 
 @primitive("floor")
 def scheme_floor(args):
-    assert len(args) == 1
+    exit_peacefully("floor", 1, len(args))
     return number(args[0]) // 1
 
 @primitive("ceil")
 def scheme_ceil(args):
-    assert len(args) == 1
+    exit_peacefully("ceil", 1, len(args))
     x = number(args[0])
     return x if x % 1 == 0 else x // 1 + 1
 
+@primitive("max")
+def scheme_max(args):
+    return max(args)
+
+@primitive("min")
+def scheme_min(args):
+    return min(args)
+
 @primitive("=")
 def scheme_eq(args):
-    assert len(args) > 0
+    if len(args) == 0:
+        exit_peacefully("=", "at least 1", 0)
     lastarg = number(args[0])
     for arg in args:
         if number(arg) != lastarg:
@@ -199,7 +216,8 @@ def scheme_eq(args):
 
 @primitive("<")
 def scheme_lt(args):
-    assert len(args) > 0
+    if len(args) == 0:
+        exit_peacefully("<", "at least 1", 0)
     if len(args) == 1:
         return '#t'
     for i in range(len(args) - 1):
@@ -209,7 +227,8 @@ def scheme_lt(args):
 
 @primitive(">")
 def scheme_gt(args):
-    assert len(args) > 0
+    if len(args) == 0:
+        exit_peacefully(">", "at least 1", 0)
     if len(args) == 1:
         return '#t'
     for i in range(len(args) - 1):
@@ -219,7 +238,8 @@ def scheme_gt(args):
 
 @primitive("<=")
 def scheme_le(args):
-    assert len(args) > 0
+    if len(args) == 0:
+        exit_peacefully("<=", "at least 1", 0)
     if len(args) == 1:
         return '#t'
     for i in range(len(args) - 1):
@@ -229,7 +249,8 @@ def scheme_le(args):
 
 @primitive(">=")
 def scheme_ge(args):
-    assert len(args) > 0
+    if len(args) == 0:
+        exit_peacefully(">=", "at least 1", 0)
     if len(args) == 1:
         return '#t'
     for i in range(len(args) - 1):
@@ -239,15 +260,15 @@ def scheme_ge(args):
 
 @primitive("even?")
 def scheme_evenQ(args):
-    assert len(args) == 1
+    exit_peacefully("even?", 1, len(args))
     return '#t' if number(args[0]) % 2 == 0 else '#f'
 
 @primitive("odd?")
 def scheme_oddQ(args):
-    assert len(args) == 1
+    exit_peacefully("odd?", 1, len(args))
     return '#t' if number(args[0]) % 2 == 1 else '#f'
 
 @primitive("zero?")
 def scheme_zeroQ(args):
-    assert len(args) == 1
+    exit_peacefully("zero?", 1, len(args))
     return '#t' if number(args[0]) == 0 else '#f'

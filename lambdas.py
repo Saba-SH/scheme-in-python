@@ -21,3 +21,4 @@ class LambdaFunction:
         self.args = args
         self.body = body
         self.toListFn = toListFn
+        self.argCount = len(self.toListFn(self.args))

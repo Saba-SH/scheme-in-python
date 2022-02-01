@@ -1,5 +1,4 @@
 import sys
-from tabnanny import check
 from conditionals import CondBlock, IfBlock
 import utils
 import primitives
@@ -19,6 +18,8 @@ def execute(func, args):
         for i in range(len(args)):
             if utils.checkStartEnd(args[i]) == utils.CSE_EXECUTABLE_LIST:
                 args[i] = processCommand(args[i])
+            if func == 'equal?' and isinstance(args[i], list):
+                args[i] = utils.listTononexList(args[i])
     
     result = None
 
@@ -29,13 +30,14 @@ def execute(func, args):
         if(func in primitives.LIST_FUNCTIONS):
             # single list
             if len(args) == 1:
-                args = utils.getListFromCommand(args[0])[1]
-                args = [args]
+                if utils.checkStartEnd(args[0]) in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]:
+                    args = utils.getListFromCommand(args[0])[1]
+                    args = [args]
             # list of lists
             else:
                 newArgs = []
                 for arg in args:
-                    newArgs.append(arg if utils.checkStartEnd(arg) == 3 else utils.getListFromCommand(arg)[1])
+                    newArgs.append(arg if utils.checkStartEnd(arg) == utils.CSE_OTHER else utils.getListFromCommand(arg)[1])
                 args = newArgs
 
         result = None
@@ -54,7 +56,7 @@ def execute(func, args):
             result = FUNCTIONS[func](args)
     
     if func in ["cdr", "cons", "append"]:
-        result = '\'' + utils.listToSchemeList(result)
+        result = utils.listTononexList(result)
 
     if result is not None and isinstance(result, str) and utils.checkStartEnd(result) in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]:
         result = utils.fixWhitespace(result)
@@ -73,6 +75,8 @@ def construct_lambda(args, body):
 # Takes as input an instance of lambda function class and a list of arguments
 # Plugs in the arguments and executes function
 def execute_lambda(lambdaFunction, args):
+    # make sure that the amount of arguments is correct
+    primitives.exit_peacefully("<lambda function>", lambdaFunction.argCount, len(args))
     return processCommand(lambdaFunction.plug(args))
 
 @primitives.primitive("lambda")
@@ -84,7 +88,7 @@ def construct_if(all):
     condition = all[0]
     trueBlock = all[1]
     falseBlock = all[2]
-    execFn = lambda x : x if (utils.checkStartEnd(x) == 3) else processCommand(x)
+    execFn = lambda x : x if (utils.checkStartEnd(x) == utils.CSE_OTHER) else processCommand(x)
     ifBlock = IfBlock(condition, trueBlock, falseBlock, execFn)
     return ifBlock
 
@@ -95,7 +99,7 @@ def execute_if(ifBlock):
 
 @primitives.primitive("if")
 def scheme_if(args):
-    assert len(args) == 3
+    primitives.exit_peacefully("if", 3, len(args))
     ifBlock = construct_if(args)
     return execute_if(ifBlock)
 
@@ -111,7 +115,7 @@ def construct_cond(all):
         blocks.append(pair[1])
     blocks.append(utils.getListFromCommand(all[len(all) - 1])[1][1])
 
-    execFn = lambda x : x if (utils.checkStartEnd(x) == 3) else processCommand(x)
+    execFn = lambda x : x if (utils.checkStartEnd(x) == utils.CSE_OTHER) else processCommand(x)
     condBlock = CondBlock(conditions, blocks, execFn)
     return condBlock
 
@@ -161,18 +165,22 @@ def scheme_eval(args):
 @primitives.primitive("apply")
 def scheme_apply(args):
     # list of arguments
-    actArgs = utils.getListFromCommand(args[1])
-    # make sure that the list is not executable as given
-    assert not actArgs[0]
-    # list of arguments
-    actArgs = actArgs[1]
+    if isinstance(args[1], str) and utils.checkStartEnd(args[1]) == utils.CSE_NONEXECUTABLE_LIST:
+        actArgs = utils.getListFromCommand(args[1])[1]
+    else:
+        actArgs = args[1]
+    # # make sure that the list is not executable as given  ###################
+    # assert not actArgs[0] #####################
+    # list of arguments     #####################
+    # actArgs = actArgs[1]  #####################
     # function to be applied to the arguments
     func = args[0]
-    # command to be processed, as python list
-    actArgs.insert(0, func)
-    # command to be processed, as scheme list
-    comm = utils.listToSchemeList(actArgs)
-    return processCommand(comm)
+    # # command to be processed, as python list     ################
+    # actArgs.insert(0, func)               ##############
+    # # command to be processed, as scheme list     #############
+    # comm = utils.listToSchemeList(actArgs)    ############
+    # return processCommand(comm)           ##############
+    return execute(func, actArgs)
 
 @primitives.primitive("map")
 def scheme_map(args):
@@ -298,7 +306,9 @@ def processFile(filename):
 @primitives.primitive("load")
 def scheme_load(arg):
     filename = arg[0]
-    assert utils.checkStartEnd(filename) == utils.CSE_STRING
+    if utils.checkStartEnd(filename) != utils.CSE_STRING:
+        print("Invalid input. Make sure to use brackets.")
+        return
     # Return from the program if there is an exit command in the file
     if processFile(filename[1:len(filename)-1]) == 1:
         sys.exit()
@@ -359,11 +369,11 @@ def processStdin():
         result = processCommand(comm)
         
         utils.output(result)    #    UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT
+        if result is not None:
+            print('')
 
 # Main function takes command-line arguments. 
-# If the user wants to run a program from a file, then there should be one command-line argument: The name of the file.
-# If there was a call to (exit) in the file, then the program terminates there.
-# Otherwise, it keeps taking commands from the interpreter after being done with the file.
+# If the user wants to run a program from a file, then there should be a command-line argument: The name of the file.
 # If there are too many arguments or no arguments, then the commands will be taken straight from stdin.
 def main(args):
     # warn the user if there were too many command line arguments
@@ -373,9 +383,8 @@ def main(args):
 
     elif(len(args) == 1):
         filename = args[0]
-        # don't proceed to stdin if the program exits in the given file
-        if processFile(filename) == 1:
-            return
+        processFile(filename)
+        return
     
     # process commands from stdin
     processStdin()
