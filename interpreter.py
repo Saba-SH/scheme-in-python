@@ -14,10 +14,12 @@ Line_Number = 1
 
 # Executes the given function with the given arguments
 def execute(func, args):
+    # process all the commands within the command
     if (isinstance(func, lambdas.LambdaFunction)) or (func not in ['if', 'cond', 'define', 'lambda']):
         for i in range(len(args)):
             if utils.checkStartEnd(args[i]) == utils.CSE_EXECUTABLE_LIST:
                 args[i] = processCommand(args[i])
+            # turn into a nonexecutable list if we're just comparing
             if func == 'equal?' and isinstance(args[i], list):
                 args[i] = utils.listTononexList(args[i])
     
@@ -42,18 +44,15 @@ def execute(func, args):
 
         result = None
 
-        # if func == 'map':
-        #     func = args[0]
-        #     args = args[1]
-        #     if func in DEFINED_FUNCTIONS:
-        #         result = FUNCTIONS['map'](lambda x : execute_lambda(DEFINED_FUNCTIONS[func], x), args)
-        #     else:
-        #         result = FUNCTIONS['map'](FUNCTIONS[func], utils.getListFromCommand(args)[1])
-        # else:
+        # call the corresponding lambda if the function is a defined function. call from the default functions otherwise
         if func in DEFINED_FUNCTIONS:
             result = execute_lambda(DEFINED_FUNCTIONS[func], args)
         else:
-            result = FUNCTIONS[func](args)
+            try:
+                result = FUNCTIONS[func](args)
+            except KeyError:
+                print("No declaration seen for \"" + str(func) + "\". Quitting.")
+                sys.exit()
     
     if func in ["cdr", "cons", "append"]:
         result = utils.listTononexList(result)
@@ -61,9 +60,6 @@ def execute(func, args):
     if result is not None and isinstance(result, str) and utils.checkStartEnd(result) in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]:
         result = utils.fixWhitespace(result)
 
-    # print(result)            ###################################################
-    # if not isinstance(result, lambdas.LambdaFunction):
-    #     result = str(result)
     return result
 
 # Constructs an instance of lambda function class based on given lambda expression and returns it
@@ -139,7 +135,6 @@ def plug_constants(comm):
 # or return the unchanged scheme list itself
 def processCommand(comm):
     comm = plug_constants(comm)
-    # print(comm)                             ####################################################
     cmnd = utils.getListFromCommand(comm)
     if cmnd[0]:     # if the command is to be executed
         # this has to be a lambda function
@@ -147,7 +142,9 @@ def processCommand(comm):
             # list representing lambda function
             funcList = utils.getListFromCommand(cmnd[1][0])[1]
             # make sure it is lambda function indeed
-            assert funcList[0] == 'lambda'
+            if funcList[0] != 'lambda':
+                print("Attempt to call invalid type. Quitting")
+                sys.exit()
             lambdaFunction = construct_lambda(funcList[1], funcList[2])
             # first argument _ the lambda function. second argument _ the list of arguments for the function.
             return execute(lambdaFunction, cmnd[1][1:])
@@ -159,7 +156,7 @@ def processCommand(comm):
 
 @primitives.primitive("eval")
 def scheme_eval(args):
-    # remove leading ' from the list and execute the command
+    # remove leading ' from the list and process the command
     return processCommand(args[0][1:])
 
 @primitives.primitive("apply")
@@ -169,17 +166,8 @@ def scheme_apply(args):
         actArgs = utils.getListFromCommand(args[1])[1]
     else:
         actArgs = args[1]
-    # # make sure that the list is not executable as given  ###################
-    # assert not actArgs[0] #####################
-    # list of arguments     #####################
-    # actArgs = actArgs[1]  #####################
     # function to be applied to the arguments
     func = args[0]
-    # # command to be processed, as python list     ################
-    # actArgs.insert(0, func)               ##############
-    # # command to be processed, as scheme list     #############
-    # comm = utils.listToSchemeList(actArgs)    ############
-    # return processCommand(comm)           ##############
     return execute(func, actArgs)
 
 @primitives.primitive("map")
@@ -192,7 +180,9 @@ def scheme_map(args):
     for arg in actArgs:
         argList = utils.getListFromCommand(arg)
         # be sure that we're mapping function on a ready list
-        assert not argList[0]
+        if argList[0]:
+            print("Invalid second argument for function \"map\". Quitting")
+            sys.exit()
         argLists.append(argList[1])
     
     res = []
@@ -203,10 +193,7 @@ def scheme_map(args):
         cmnd.append(func)
         for j in range(len(argLists)):
             cmnd.append(argLists[j][i])
-        # # turn the command into a scheme-style command as a string
-        # comm = utils.listToSchemeList(cmnd)
-        # # compute element of the result list and append it to the result list
-        # res.append(processCommand(comm))
+
         res.append(execute(cmnd[0], cmnd[1:]))
     
     return res
@@ -230,7 +217,9 @@ def getCommandFromStdin():
             elif c == ')':
                 openBr -= 1
         # terminate program if more closed brackets than open ones
-        assert openBr >= 0
+        if openBr < 0:
+            print("Invalid input based on brackets. Quitting")
+            sys.exit()
         # finish reading the command if all open brackets have been closed
         if openBr == 0:
             break
@@ -238,16 +227,19 @@ def getCommandFromStdin():
     return utils.fixWhitespace(utils.removeComments(comm))
 
 # Reads the next command from a file and returns it as one line with whitespace fixed
-def getCommandFromFile(file):
+def getCommandFromFile(file, lineCount):
     comm = ''
     openBr = 0      # keep count of open brackets
     while True:
+        lineCount[0] += 1
         line = file.readline()
         comm += line
         # break the loop if no more lines to be read from file
         if not line:
             # terminate program if unclosed brackets
-            assert openBr == 0
+            if openBr != 0:
+                print("Found unexpected EOF at line " + str(lineCount[0] - 1) + ". Quitting.")
+                sys.exit()
             break
         for c in line:
             # check for open and closed brackets within the command
@@ -256,7 +248,9 @@ def getCommandFromFile(file):
             elif c == ')':
                 openBr -= 1
         # terminate program if more closed brackets than open ones
-        assert openBr >= 0
+        if openBr < 0:
+            print("Found invalid brackets at line " + str(lineCount[0]) + ". Quitting.")
+            sys.exit()
         # finish reading the command if all open brackets have been closed
         if openBr == 0:
             break
@@ -269,9 +263,15 @@ def getCommandFromFile(file):
 # Process all commands from the given file.
 # Return 1 if there was a call to exit within the file, return 0 otherwise.
 def processFile(filename):
-    file = open(filename, 'r')
+    try:
+        file = open(filename, 'r')
+    except FileNotFoundError:
+        print("Unable to find file \"" + filename + "\". Quitting")
+        sys.exit()
+
+    lineCount = [0]
     while True:
-        comm = getCommandFromFile(file)
+        comm = getCommandFromFile(file, lineCount)
         
         # stop reading if we reached EOF
         if comm is None:
@@ -281,10 +281,10 @@ def processFile(filename):
         if comm == '':
             continue
 
-        # print(comm)             ##############################################################
-
         # make sure that the input command was a list
-        assert utils.checkStartEnd(comm) in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]
+        if utils.checkStartEnd(comm) not in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]:
+            print("Found invalid input ending at line " + str(lineCount[0]) + ". Quitting")
+            sys.exit()
 
         # stop reading if we got an exit command
         if comm == '(exit)':
@@ -307,7 +307,7 @@ def processFile(filename):
 def scheme_load(arg):
     filename = arg[0]
     if utils.checkStartEnd(filename) != utils.CSE_STRING:
-        print("Invalid input. Make sure to use brackets.")
+        print("Invalid input for function \"load\". Make sure to use quotes.")
         return
     # Return from the program if there is an exit command in the file
     if processFile(filename[1:len(filename)-1]) == 1:
@@ -357,10 +357,10 @@ def processStdin():
     while True:
         comm = getCommandFromStdin()
         
-        # print(comm)             ##############################################################
-        
         # make sure that the input command was a list
-        assert utils.checkStartEnd(comm) in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]
+        if utils.checkStartEnd(comm) not in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]:
+            print("Invalid input: input command must be a list. Quitting")
+            sys.exit()
 
         # quit reading commands on (exit) command
         if comm == '(exit)':
@@ -368,26 +368,76 @@ def processStdin():
 
         result = processCommand(comm)
         
-        utils.output(result)    #    UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT   UNCOMMENT
+        utils.output(result)
         if result is not None:
             print('')
 
+# Take a Y or N from the user. Used for confirmation
+def takeYorN():
+    inp = input()
+    while len(inp) == 0 or (inp[0]).capitalize() not in ['Y', 'N']:
+        inp = input()
+    return inp[0]
+
+# Update the recursion limit based on user input
+def askRecursionLimit():
+    default = sys.getrecursionlimit()
+    chosen = input("Enter a new recursion limit: ")
+    while not chosen.isnumeric():
+        chosen = input("Invalid input. Try again: ")
+    chosen = int(chosen)
+
+    choice = True
+    if chosen < default:
+        print("The value you entered is less than the default. Are you sure?(Y/N) ", end="")
+        choice = (takeYorN() == 'Y')
+    elif chosen > 25 * default:
+        print("The value you entered is more than " + str(chosen // default // 5 * 5) + " times greater than the default. Are you sure?(Y/N) ", end="")
+        choice = (takeYorN() == 'Y')
+    
+    if choice:
+        sys.setrecursionlimit(chosen)
+
+# Processes the command line arguments provided to the interpreter.
+# It is possible to provide a filename and an optional argument "reclim".
+# reclim has to be the last argument. If you provide it, you get to choose a recursion limit.
+# This function returns a list. 
+# First element of list is 0 if we're opening the interpreter.
+# It is 1 if we're running the interpreter through a file, with second element being the filename
+def processCLA(CLA):
+    # no arguments
+    if len(CLA) == 0:
+        return [0]
+    # one argument
+    if len(CLA) == 1:
+        if CLA[0] == "reclim":
+            askRecursionLimit()
+            return [0]
+        else:
+            return [1, CLA[0]]
+    # two arguments
+    if len(CLA) == 2:
+        if CLA[1] != "reclim":
+            print("Unrecognized argument " + str(CLA[1]) + ", ignoring.")
+        else:
+            askRecursionLimit()
+        return [1, CLA[0]]
+    # too many arguments
+    print('Too many command line arguments, opening the application the default way.')
+    print('usage: python3 interpreter.py {optional: <filename> reclim}')
+    return [0]
+    
 # Main function takes command-line arguments. 
 # If the user wants to run a program from a file, then there should be a command-line argument: The name of the file.
-# If there are too many arguments or no arguments, then the commands will be taken straight from stdin.
+# User can also set the recursion limit by entering "reclim" as the last argument.
+# If there are too many(more than 2) arguments or no arguments, then the commands will be taken straight from stdin.
 def main(args):
-    # warn the user if there were too many command line arguments
-    if(len(args) > 1):
-        print('Too many command line arguments, opening the application the default way.')
-        print('usage: python3 interpreter.py <filename>')
-
-    elif(len(args) == 1):
-        filename = args[0]
-        processFile(filename)
-        return
-    
+    way = processCLA(args)
     # process commands from stdin
-    processStdin()
+    if way[0] == 0:
+        processStdin()
+    else:
+        processFile(way[1])
 
 if __name__ == '__main__':
     main(sys.argv[1:])

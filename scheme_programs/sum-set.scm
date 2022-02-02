@@ -78,8 +78,9 @@
 )
 
 ; ###TESTS###
-(display (equal? (sum-set '(1 2 3 4) 2 5) '((1 4) (2 3))))	; TEST 1
+(display (equal? (sum-set '(1 2 3 4) 2 5) '('(2 3) '(1 4))))	; TEST 1
 (newline)
-(display (equal? (sum-set '(2 2 1 5 6) 3 9) '((2 2 5) (2 1 6)))	; TEST 2
+(display (equal? (sum-set '(2 2 1 5 6) 3 9) '('(2 1 6) '(2 2 5))))	; TEST 2
+(newline)
 (display (equal? (sum-set '(1 1 1 1 1 1) 4 5) '()))	; TEST 3
-
+(newline)
