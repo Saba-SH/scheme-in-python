@@ -1,3 +1,4 @@
+from sys import exit
 """This file implements utilities used for working with scheme I/O,
  scheme lists and using them together with python lists."""
 
@@ -81,6 +82,11 @@ def getEncasedIn(strn, pos, leftC, rightC):
 # First element of the returned list is whether the list should be evaluated, 
 # second element is the list of the list's elements
 def getListFromCommand(comm):
+    # make sure that the command is an actual scheme list
+    if checkStartEnd(comm) not in [CSE_EXECUTABLE_LIST, CSE_NONEXECUTABLE_LIST]:
+        print("Error: trying to parse a non-list as a list. Quitting.")
+        exit()
+        
     res = []
     comm = comm[:len(comm) - 1]         # remove ) at the end
     if comm[0] == '\'':                 # remove '( at the start
@@ -110,13 +116,9 @@ def getListFromCommand(comm):
         pos += 1
 
     res.append(elems)
-    # '() and () are one and the same
-    if elems == []:
-        res[0] = False
-    # print(res)                         ###############################################
     return res
 
-# Returns a string representation of the given python list
+# Returns a string representation of the given python list(no quotes)
 def listToSchemeList(lst):
     res = '('
     if len(lst) > 0:
@@ -126,7 +128,7 @@ def listToSchemeList(lst):
     res += ')'
     return res
 
-# Returns a string representation of the given python list, except that all lists are starting with '
+# Returns a string representation of the given python list, except that all lists are starting with quote
 def listTononexList(lst):
     res = '\'('
     if len(lst) > 0:
@@ -137,7 +139,7 @@ def listTononexList(lst):
     return res
 
 
-# Replaces every occurence of arg in lst with argVal
+# Replaces every occurence of arg in lst with argVal. lst is a scheme list in string form.
 def replaceInList(arg, argVal, lst):
     pos = 0
     while True:

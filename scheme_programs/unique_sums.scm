@@ -29,6 +29,8 @@
     (make-unique (all-sums lst))
 )
 
+; For the given list, return the amount of unique sums existing among all the subsequences of the list.
+; Subsequence means not necessarily continuous. Empty subsequence is included.
 (define (unique-sums lst)
     (length (sums lst))
 )
@@ -47,4 +49,5 @@
 (newline)
 (display (= 7 (unique-sums '(1 1 1 1 1 1))))    ; TEST 6
 (newline)
-
+(display (= 1 (unique-sums '())))   ; TEST 7
+(newline)

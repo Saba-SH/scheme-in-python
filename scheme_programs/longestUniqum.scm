@@ -66,8 +66,13 @@
     (helperHelper lst 0 n)
 )
 
+; For the given list, return the longest sublist(continuous) with unique elements.
+; If there are more than one, choose the one with the highest elements(priority goes to early elements).
 (define (longestUniqum lst)
-    (uniqumHelper lst (length lst))
+    (if (null? lst)
+        '()
+        (uniqumHelper lst (length lst))
+    )
 )
 
 ; ###TESTS###
@@ -78,25 +83,28 @@
 (display (equal? (longestUniqum '(1 2 4 3 5 6 5 4 3)) '(1 2 4 3 5 6)))	; TEST 2
 (newline)
 
+; empty list
+(display (equal? (longestUniqum '()) '()))  ; TEST 3
+(newline)
+
 ; longer list of digits
-(display (equal? (longestUniqum '(3 3 1 2 6 3 6 2 8 2 9 6 9 1 1 2 8 1 2 2)) '(8 2 9 6)))	; TEST 3
+(display (equal? (longestUniqum '(3 3 1 2 6 3 6 2 8 2 9 6 9 1 1 2 8 1 2 2)) '(8 2 9 6)))	; TEST 4
 (newline)
 
 ; longer list of numbers 0-19
-(display (equal? (longestUniqum '(8 14 11 3 11 1 4 5 17 12 3 12 15 0 10 10 6 9 9 12 11 6 5 12 7 3 18 4 9 6)) '(11 6 5 12 7 3 18 4 9)))	; TEST 4
+(display (equal? (longestUniqum '(8 14 11 3 11 1 4 5 17 12 3 12 15 0 10 10 6 9 9 12 11 6 5 12 7 3 18 4 9 6)) '(11 6 5 12 7 3 18 4 9)))	; TEST 5
 (newline)
 
 ; even longer list of numbers 0-99
-(display (equal? (longestUniqum '(36 52 88 7 6 75 70 4 62 66 13 30 9 90 75 91 35 89 30 88 92 8 32 31 69 15 59 75 92 35 14 30 73 76 43 20 26 25 20 8)) '(8 32 31 69 15 59 75 92 35 14 30 73 76 43 20 26 25)))	; TEST 5
+(display (equal? (longestUniqum '(36 52 88 7 6 75 70 4 62 66 13 30 9 90 75 91 35 89 30 88 92 8 32 31 69 15 59 75 92 35 14 30 73 76 43 20 26 25 20 8)) '(8 32 31 69 15 59 75 92 35 14 30 73 76 43 20 26 25)))	; TEST 6
 (newline)
 
 ; many large numbers over a short interval
-(display (equal? (longestUniqum '(3540 3542 3549 3558 3558 3544 3540 3552 3553 3551 3541 3541 3555 3545 3541 3540 3554 3558 3541 3556 3550 3546 3552 3545 3543 3545 3541 3549 3549 3546)) '(3540 3554 3558 3541 3556 3550 3546 3552 3545 3543)))	; TEST 6
+(display (equal? (longestUniqum '(3540 3542 3549 3558 3558 3544 3540 3552 3553 3551 3541 3541 3555 3545 3541 3540 3554 3558 3541 3556 3550 3546 3552 3545 3543 3545 3541 3549 3549 3546)) '(3540 3554 3558 3541 3556 3550 3546 3552 3545 3543)))	; TEST 7
 (newline)
 
 ; less large numbers over a long interval
 (display (equal? (longestUniqum '(4885 11222 9861 6411 10372 5329 15021 7720 7992 17480 19910 10163 12589 3255 16114 17874 4956 8146 11078 6399 7477 3822 11111 8716 12345 15043 13096 4544 7779 16409)) '(4885 11222 9861 6411 10372 5329 15021 7720 7992 17480 19910 10163 12589 3255
  16114 17874 4956 8146 11078 6399 7477 3822 11111 8716 12345 15043 13096 4544
- 7779 16409)))	; TEST 7
+ 7779 16409)))	; TEST 8
  (newline)
-

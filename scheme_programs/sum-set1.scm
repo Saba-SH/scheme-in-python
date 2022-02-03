@@ -7,7 +7,7 @@
 
 (define (all-subseqs lst)
     (if (null? lst)
-        '('())
+        '(())
         (append 
             (all-subseqs (cdr lst))
             (map 
@@ -82,15 +82,15 @@
 
 ; ###TESTS###
 
-(display (equal? (sum-set '(1 2 3 4) 2 5) '('(2 3) '(1 4))))	; TEST 1
+(display (equal? (sum-set '(1 2 3 4) 2 5) '((2 3) (1 4))))	; TEST 1
 (newline)
-(display (equal? (sum-set '(2 2 1 5 6) 3 9) '('(2 1 6) '(2 2 5))))	; TEST 2
+(display (equal? (sum-set '(2 2 1 5 6) 3 9) '((2 1 6) (2 2 5))))	; TEST 2
 (newline)
-(display (equal? (sum-set '(1 1 1 1 1 1) 4 5) '()))	; TEST 3
+(display (equal? (sum-set '(1 1 1 1 1 1) 4 5) ()))	; TEST 3
 (newline)
-(display (equal? (sum-set '(1 1 1 1 1 1) 4 4) '('(1 1 1 1))))  ; TEST 4
+(display (equal? (sum-set '(1 1 1 1 1 1) 4 4) '((1 1 1 1))))  ; TEST 4
 (newline)
-(display (equal? (sum-set '(1 2 3 4 5 6 7 8 9 10) 2 15) '('(7 8) '(6 9) '(5 10))))  ; TEST 5
+(display (equal? (sum-set '(1 2 3 4 5 6 7 8 9 10) 2 15) '((7 8) (6 9) (5 10))))  ; TEST 5
 (newline)
 (display (equal? (sum-set '() 1 1) '()))    ; TEST 6
 (newline)

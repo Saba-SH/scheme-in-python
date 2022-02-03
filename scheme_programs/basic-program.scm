@@ -70,9 +70,9 @@
 (newline)
 (display (equal? (length '('(1 2 3) 1 2 3)) 4)) ; TEST 23
 (newline)
-(display (equal? (length '(())) 1)) ; TEST 24
+(display (equal? (length '('())) 1)) ; TEST 24
 (newline)
-(display (equal? (length ()) 0))    ; TEST 25
+(display (equal? (length '()) 0))    ; TEST 25
 (newline)
 
 ; cond

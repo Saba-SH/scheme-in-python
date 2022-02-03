@@ -95,6 +95,8 @@
     )
 )
 
+; For the given list, return the longest strictly decreasing subsegment.
+; If there are more than one, choose the one with the highest elements(priority goes to early elements).
 (define (max-decreasing-subsegment sequence)
     (helper sequence 0 (length sequence))
 )
@@ -121,4 +123,3 @@
 (newline)
 (display (equal? (max-decreasing-subsegment '(8 6 4 2 0 9 7 5 3 1)) '(9 7 5 3 1)))	; TEST 10
 (newline)
-

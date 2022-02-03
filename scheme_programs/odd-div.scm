@@ -15,33 +15,34 @@
     )
 )
 
-(define (odd-divisors n)
+; For the given number, return the sum of all odd divisors of that number.
+(define (odd-div n)
     (sum-list (odd-helper n 1))
 )
 
 ; ###TESTS###
 
 ; basic tests
-(display (equal? (odd-divisors 24) 4))	; TEST 1
+(display (equal? (odd-div 24) 4))	; TEST 1
 (newline)
-(display (equal? (odd-divisors 17) 18))	; TEST 2
+(display (equal? (odd-div 17) 18))	; TEST 2
 (newline)
-(display (equal? (odd-divisors 15) 24))	; TEST 3
+(display (equal? (odd-div 15) 24))	; TEST 3
 (newline)
 
 ; power of 2
-(display (equal? (odd-divisors 128) 1))	; TEST 4
+(display (equal? (odd-div 128) 1))	; TEST 4
 (newline)
 
 ; power of 3
-(display (equal? (odd-divisors 81) 121))	; TEST 5
+(display (equal? (odd-div 81) 121))	; TEST 5
 (newline)
 
 ; 37 * 3
-(display (equal? (odd-divisors 111) 152))	; TEST 6
+(display (equal? (odd-div 111) 152))	; TEST 6
 (newline)
 
 ; product of all prime odd digits
-(display (equal? (odd-divisors 105) 192))	; TEST 7
+(display (equal? (odd-div 105) 192))	; TEST 7
 (newline)
 

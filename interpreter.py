@@ -15,7 +15,7 @@ Line_Number = 1
 # Executes the given function with the given arguments
 def execute(func, args):
     # process all the commands within the command
-    if (isinstance(func, lambdas.LambdaFunction)) or (func not in ['if', 'cond', 'define', 'lambda']):
+    if (isinstance(func, lambdas.LambdaFunction)) or (func not in {'if', 'cond', 'define', 'lambda', 'quote'}):
         for i in range(len(args)):
             if utils.checkStartEnd(args[i]) == utils.CSE_EXECUTABLE_LIST:
                 args[i] = processCommand(args[i])
@@ -156,6 +156,7 @@ def processCommand(comm):
 
 @primitives.primitive("eval")
 def scheme_eval(args):
+    primitives.exit_peacefully("eval", 1, len(args))
     # remove leading ' from the list and process the command
     return processCommand(args[0][1:])
 
@@ -359,7 +360,7 @@ def processStdin():
         
         # make sure that the input command was a list
         if utils.checkStartEnd(comm) not in [utils.CSE_EXECUTABLE_LIST, utils.CSE_NONEXECUTABLE_LIST]:
-            print("Invalid input: input command must be a list. Quitting")
+            print("Invalid input: input command must be a list. Quitting.")
             sys.exit()
 
         # quit reading commands on (exit) command
@@ -377,7 +378,7 @@ def takeYorN():
     inp = input()
     while len(inp) == 0 or (inp[0]).capitalize() not in ['Y', 'N']:
         inp = input()
-    return inp[0]
+    return inp[0].capitalize()
 
 # Update the recursion limit based on user input
 def askRecursionLimit():
@@ -391,12 +392,15 @@ def askRecursionLimit():
     if chosen < default:
         print("The value you entered is less than the default. Are you sure?(Y/N) ", end="")
         choice = (takeYorN() == 'Y')
-    elif chosen > 25 * default:
+    elif chosen > 10 * default:
         print("The value you entered is more than " + str(chosen // default // 5 * 5) + " times greater than the default. Are you sure?(Y/N) ", end="")
         choice = (takeYorN() == 'Y')
     
     if choice:
+        print("Recursion limit set to " + str(chosen) + ".")
         sys.setrecursionlimit(chosen)
+    else:
+        print("Leaving recursion limit at the default value: " + str(sys.getrecursionlimit()) + ".")
 
 # Processes the command line arguments provided to the interpreter.
 # It is possible to provide a filename and an optional argument "reclim".
@@ -418,7 +422,7 @@ def processCLA(CLA):
     # two arguments
     if len(CLA) == 2:
         if CLA[1] != "reclim":
-            print("Unrecognized argument " + str(CLA[1]) + ", ignoring.")
+            print("Unrecognized command-line argument \"" + str(CLA[1]) + "\", ignoring.")
         else:
             askRecursionLimit()
         return [1, CLA[0]]

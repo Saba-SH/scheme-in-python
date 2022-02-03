@@ -126,21 +126,38 @@ def scheme_append(args):
         res = res + arg
     return res
 
+@primitive("quote")
+def scheme_quote(args):
+    exit_peacefully("quote", 1, len(args))
+    return '\'' + args[0]
+
 @primitive("list")
 def scheme_list(args):
     return args
 
-# @primitive("string?")
-# def scheme_stringQ(x):
-#     return isinstance(x, str) and x.startswith('"')
+@primitive("string?")
+def scheme_stringQ(args):
+    exit_peacefully("string?", 1, len(args))
+    elem = args[0]
+    return '#t' if len(elem) >= 2 and [elem[0], elem[len(elem) - 1]] in [['\'', '\''], ['\"', '\"']] else '#f'
 
-# @primitive("number?")
-# def scheme_numberQ(x):
-#     return isinstance(x, int) or isinstance(x, float)
+@primitive("number?")
+def scheme_numberQ(args):
+    exit_peacefully("number?", 1, len(args))
+    elem = str(args[0])
+    if elem.count('.') <= 1:
+        occ = elem.find('.')
+        if elem.find('-') > occ % len(elem):
+            return '#f'
+        if occ < len(elem) - 1:
+            if scheme_integerQ([elem] if occ == -1 else [elem[0:occ] + elem[occ + 1:]]) == '#t':
+                return '#t'
+    return '#f'
 
-# @primitive("integer?")
-# def scheme_integerQ(x):
-#     return isinstance(x, int) or (scheme_numberQ(x) and round(x) == x)
+@primitive("integer?")
+def scheme_integerQ(args):
+    exit_peacefully("integer?", 1, len(args))
+    return '#t' if (args[0].isnumeric() or (args[0][0] == '-' and args[0][1:].isnumeric())) else '#f'
 
 @primitive("+")
 def scheme_add(args):
@@ -151,6 +168,8 @@ def scheme_add(args):
 
 @primitive("-")
 def scheme_sub(args):
+    if len(args) == 0:
+        exit_peacefully("-", "at least 1", 0)
     if len(args) == 1:
         return -number(args[0])
     res = number(args[0])
@@ -167,6 +186,8 @@ def scheme_mul(args):
 
 @primitive("/")
 def scheme_div(args):
+    if len(args) == 0:
+        exit_peacefully("/", "at least 1", 0)
     if len(args) == 1:
         return number(1 / number(args[0]))
     res = number(args[0])
