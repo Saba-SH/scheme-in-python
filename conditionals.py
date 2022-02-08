@@ -27,6 +27,7 @@ class CondBlock:
         for i in range(len(self.conditions)):
             repr += '\n' + self.conditions[i] + '\t' + self.blocks[i]
         repr += '\nelse ' + self.blocks[len(self.blocks) - 1] + '}'
+        return repr
 
     def __init__(self, conditions, blocks, execFn):
         self.conditions = conditions
