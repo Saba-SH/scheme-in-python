@@ -320,6 +320,7 @@ def scheme_load(arg):
 @primitives.primitive("display")
 def scheme_display(args):
     utils.output(args[0])
+    return 0
 
 # Puts a new line to the console
 @primitives.primitive("newline")
